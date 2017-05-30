@@ -1,0 +1,14 @@
+<p id="board">Please start a game</p>
+
+<input type="button" value="Play" onClick="play()"/>
+
+<script type="text/javascript">
+    function play() {
+        android.play();
+    }
+
+    function update(board) {
+        document.getElementById('board').innerHTML = board;
+    }
+
+</script>
