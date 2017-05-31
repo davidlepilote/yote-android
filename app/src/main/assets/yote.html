@@ -1,14 +1,24 @@
-<p id="board">Please start a game</p>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Yote</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body>
 
-<input type="button" value="Play" onClick="play()"/>
+<div id="container">
 
-<script type="text/javascript">
-    function play() {
-        android.play();
-    }
+    <div id="board">Please start a game</div>
 
-    function update(board) {
-        document.getElementById('board').innerHTML = board;
-    }
+    <input id="playButton" type="button" value="Play" onClick="play()"/>
 
-</script>
+</div>
+
+
+<script src="js/jquery.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>
+
+
+

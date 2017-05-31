@@ -12,16 +12,20 @@ import java.util.List;
 /**
  * Created by David et Monireh on 15/11/2016.
  */
-public abstract class Player implements Playable {
+public abstract class Player implements Playable
+{
 
-    public static class Move {
+    public static class Move
+    {
 
-        public Move(MoveType type, Board.Case... cases) {
+        public Move(MoveType type, Board.Case... cases)
+        {
             this.type = type;
             this.cases = cases;
         }
 
-        public enum MoveType implements Comparable<MoveType> {
+        public enum MoveType implements Comparable<MoveType>
+        {
             JUMP,
             SLIDE,
             ADD;
@@ -32,8 +36,10 @@ public abstract class Player implements Playable {
         public final Board.Case[] cases;
 
         @Override
-        public String toString() {
-            switch (type){
+        public String toString()
+        {
+            switch (type)
+            {
                 case ADD:
                     return type + " : " + cases[0].line + "," + cases[0].column;
                 default:
@@ -48,28 +54,36 @@ public abstract class Player implements Playable {
 
     private final Deque<Board.Blot> blots = new ArrayDeque<>(NB_BLOTS);
 
-    public Player(Board.Blot.BlotColor color) {
+    public Player(Board.Blot.BlotColor color)
+    {
         this.color = color;
         init();
     }
 
     @Override
-    public void init() {
+    public void init()
+    {
         this.blots.clear();
-        for (int nbBlot = 0; nbBlot < NB_BLOTS; nbBlot++) {
+        for (int nbBlot = 0; nbBlot < NB_BLOTS; nbBlot++)
+        {
             blots.add(new Board.Blot(this.color));
         }
     }
 
-    public Board.Blot takeBlot(){
+    public Board.Blot takeBlot()
+    {
         return blots.pop();
     }
 
-    public int blotsLeft(Board board) {
+    public int blotsLeft(Board board)
+    {
         int nbBlots = blots.size();
-        for (Board.Case[] cases : board.cases) {
-            for (Board.Case aCase : cases) {
-                if (aCase.isSameColor(color)) {
+        for (Board.Case[] cases : board.cases)
+        {
+            for (Board.Case aCase : cases)
+            {
+                if (aCase.isSameColor(color))
+                {
                     nbBlots++;
                 }
             }
@@ -78,7 +92,8 @@ public abstract class Player implements Playable {
         //return blots.size() + (int) Stream.of(board.cases).flatMap(Stream::of).filter(aCase -> aCase.isSameColor(color)).count();
     }
 
-    public boolean hasNonPlayedBlots() {
+    public boolean hasNonPlayedBlots()
+    {
         return !blots.isEmpty();
     }
 
@@ -91,31 +106,41 @@ public abstract class Player implements Playable {
      * @param board
      * @return all legal moves for the given player and board
      */
-    public List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots) {
+    public List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots)
+    {
         List<Move> moves = new ArrayList<>();
-        for (Board.Case aCase : board) {
+        for (Board.Case aCase : board)
+        {
             // Try to add a ADD Move
-            if (aCase.isEmpty() && !blots.isEmpty()) {
+            if (aCase.isEmpty() && !blots.isEmpty())
+            {
                 moves.add(new Move(Move.MoveType.ADD, aCase));
-            } else if (aCase.isSameColor(color)) {
-                for (Board.Direction direction : Board.Direction.values()) {
+            } else if (aCase.isSameColor(color))
+            {
+                for (Board.Direction direction : Board.Direction.values())
+                {
                     // Try to add a SLIDE Move
                     Board.Case slidingCase = board.moveTo(aCase, direction);
-                    if (slidingCase != null) {
+                    if (slidingCase != null)
+                    {
                         moves.add(new Move(Move.MoveType.SLIDE, aCase, slidingCase));
                     }
                     // Try to add a JUMP Move
                     Pair<Board.Case, Board.Case> newCase = board.jumpTo(aCase, direction);
-                    if (newCase != null) {
+                    if (newCase != null)
+                    {
                         final Board.Case opponentCase = newCase.first;
                         final Board.Case jumpedCase = newCase.second;
-                        for (Board.Case otherOpponentCase : board) {
-                            if(otherOpponentCase.isOpponentColor(color) && otherOpponentCase != opponentCase){
+                        for (Board.Case otherOpponentCase : board)
+                        {
+                            if (otherOpponentCase.isOpponentColor(color) && otherOpponentCase != opponentCase)
+                            {
                                 moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, otherOpponentCase));
                             }
                         }
                         // The opponent other blot is taken from his own stack
-                        if (opponentHasNonPlayedBlots) {
+                        if (opponentHasNonPlayedBlots)
+                        {
                             moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, null));
                         }
                     }
@@ -125,7 +150,51 @@ public abstract class Player implements Playable {
         return moves;
     }
 
-    public boolean hasLost(Board board) {
+    public List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots, Board.Case aCase)
+    {
+        List<Move> moves = new ArrayList<>();
+        // Try to add a ADD Move
+        if (aCase.isEmpty() && !blots.isEmpty())
+        {
+            moves.add(new Move(Move.MoveType.ADD, aCase));
+        } else if (aCase.isSameColor(color))
+        {
+            for (Board.Direction direction : Board.Direction.values())
+            {
+                // Try to add a SLIDE Move
+                Board.Case slidingCase = board.moveTo(aCase, direction);
+                if (slidingCase != null)
+                {
+                    moves.add(new Move(Move.MoveType.SLIDE, aCase, slidingCase));
+                }
+                // Try to add a JUMP Move
+                Pair<Board.Case, Board.Case> newCase = board.jumpTo(aCase, direction);
+                if (newCase != null)
+                {
+                    final Board.Case opponentCase = newCase.first;
+                    final Board.Case jumpedCase = newCase.second;
+                    for (Board.Case otherOpponentCase : board)
+                    {
+                        if (otherOpponentCase.isOpponentColor(color) && otherOpponentCase != opponentCase)
+                        {
+                            moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, otherOpponentCase));
+                        }
+                    }
+                    // The opponent other blot is taken from his own stack
+                    if (opponentHasNonPlayedBlots)
+                    {
+                        moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, null));
+                    }
+                }
+            }
+        }
+
+        return moves;
+    }
+
+
+    public boolean hasLost(Board board)
+    {
         return blotsLeft(board) == 0;
         //return blots.size() == 0 && Stream.of(board.cases).flatMap(Stream::of).filter(aCase -> aCase.isSameColor(color)).count() == 0;
     }

@@ -1,0 +1,68 @@
+#container
+{
+    text-align: center;
+}
+
+#board
+{
+    height: 80%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#playButton
+{
+    margin-top: 20px;
+}
+
+.row
+{
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+}
+
+.tile
+{
+    width: 16%;
+    height: 20%;
+    border : 1px solid black;
+    background-color: white;
+
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.clickedTile
+{
+    border: 1px solid blue;
+}
+
+.tile .previsionBlot
+{
+    border: 1px solid black;
+    border-radius: 50%;
+    width: 50%;
+    height: 50%;
+    margin: auto;
+    background-color: red;
+}
+
+.tile .blot
+{
+    border: 1px solid black;
+    border-radius: 50%;
+    width: 50%;
+    height: 50%;
+    margin: auto;
+}
+
+.blackBlot
+{
+    background-color: black;
+}
