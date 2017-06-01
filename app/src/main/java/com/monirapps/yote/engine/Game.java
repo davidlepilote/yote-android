@@ -1,6 +1,7 @@
 package com.monirapps.yote.engine;
 
 import com.monirapps.yote.engine.player.Player;
+import com.monirapps.yote.engine.player.Player.Move;
 
 import java.util.List;
 import java.util.Observable;

@@ -2,6 +2,7 @@ package com.monirapps.yote.engine;
 
 import android.support.v4.util.Pair;
 
+import com.google.gson.annotations.SerializedName;
 import com.monirapps.yote.engine.player.Player;
 
 import java.util.ArrayDeque;
@@ -159,7 +160,9 @@ public class Board implements Iterable<Board.Case>{
     public static class Blot {
 
         public enum BlotColor{
+            @SerializedName("white")
             WHITE,
+            @SerializedName("black")
             BLACK;
 
             public BlotColor opposite(){

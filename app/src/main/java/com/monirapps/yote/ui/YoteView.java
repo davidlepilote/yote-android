@@ -22,102 +22,82 @@ import java.util.Observer;
  * Created by David et Monireh on 30/05/2017.
  */
 
-public class YoteView extends WebView implements Observer
+public class YoteView
+    extends WebView
+    implements Observer
 {
 
-    private Game.PlayMoveListener playMoveListener;
+  private Game.PlayMoveListener playMoveListener;
 
-    public YoteView(Context context)
+  public YoteView(Context context)
+  {
+    this(context, null);
+  }
+
+  public YoteView(Context context, AttributeSet attrs)
+  {
+    super(context, attrs);
+    setup();
+  }
+
+  public YoteView(Context context, AttributeSet attrs, int defStyleAttr)
+  {
+    super(context, attrs, defStyleAttr);
+    setup();
+  }
+
+  public void update(String board)
+  {
+    final String format = String.format("javascript:update('%s')", board);
+    System.out.println(format);
+    loadUrl(format);
+  }
+
+  public void setOnPlayMoveListener(Game.PlayMoveListener playMoveListener)
+  {
+    YoteView.this.playMoveListener = playMoveListener;
+  }
+
+  private void setup()
+  {
+    getSettings().setJavaScriptEnabled(true);
+    addJavascriptInterface(this, "android");
+    loadUrl("file:///android_asset/yote.html");
+  }
+
+  // Not done in UI Thread
+  @SuppressWarnings("unused")
+  @JavascriptInterface
+  public void play()
+  {
+    if (playMoveListener != null)
     {
-        this(context, null);
+      playMoveListener.play();
     }
+  }
 
-    public YoteView(Context context, AttributeSet attrs)
+  @SuppressWarnings("unused")
+  @JavascriptInterface
+  public void getLegalMoves(final String jsonString)
+  {
+    if (playMoveListener != null)
     {
-        super(context, attrs);
-        setup();
-    }
-
-    public YoteView(Context context, AttributeSet attrs, int defStyleAttr)
-    {
-        super(context, attrs, defStyleAttr);
-        setup();
-    }
-
-    public void update(String board)
-    {
-        final String format = String.format("javascript:update('%s')", board);
-        System.out.println(format);
-        loadUrl(format);
-    }
-
-    public void setOnPlayMoveListener(Game.PlayMoveListener playMoveListener)
-    {
-        YoteView.this.playMoveListener = playMoveListener;
-    }
-
-    private void setup()
-    {
-        getSettings().setJavaScriptEnabled(true);
-        addJavascriptInterface(this, "android");
-        loadUrl("file:///android_asset/yote.html");
-    }
-
-    @JavascriptInterface
-    public void play()
-    {
-        if (playMoveListener != null)
+      final Gson gson = new Gson();
+      post(new Runnable()
+      {
+        @Override
+        public void run()
         {
-            playMoveListener.play();
+          loadUrl(String.format("javascript:showLegalMoves('%s')", gson.toJson(playMoveListener.getLegalMoves(gson.fromJson(jsonString, Board.Case.class)))));
         }
+      });
     }
+  }
 
-    @JavascriptInterface
-    public void getLegalMoves(String jsonString)
-    {
-        final Gson gson = new Gson();
-        Board.Case aCase;
-        String color = null;
-
-        try
-        {
-            final JSONObject jsonObject = new JSONObject(jsonString);
-            color = (String) jsonObject.getJSONObject("blot").get("color");
-
-        } catch (JSONException e)
-        {
-            e.printStackTrace();
-        }
-
-        aCase = gson.fromJson(jsonString, Board.Case.class);
-
-        final Board.Blot.BlotColor blotColor = color.equals("white") ? Board.Blot.BlotColor.WHITE : Board.Blot.BlotColor.BLACK;
-        aCase.setBlot(new Board.Blot(blotColor));
-
-        if (playMoveListener != null)
-        {
-            final List<Player.Move> legalMoves = playMoveListener.getLegalMoves(aCase);
-
-            final String jsonMoves = gson.toJson(legalMoves);
-            final String format = String.format("javascript:showLegalMoves('%s')", jsonMoves);
-
-            post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    loadUrl(format);
-                }
-            });
-
-        }
-    }
-
-    @Override
-    public void update(Observable o, Object arg)
-    {
-        update(arg.toString());
-    }
-
+  @Override
+  public void update(Observable o, Object arg)
+  {
+    update(arg.toString());
+  }
 
 }
