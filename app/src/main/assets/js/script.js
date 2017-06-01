@@ -1,4 +1,6 @@
+
  $(function() {
+
 
     $('body').on('click', '.tile', function (event)
     {
@@ -6,12 +8,13 @@
           $(this).toggleClass('clickedTile');
 
 
+            var test = new Case(4,5);
+
             var aCase = {};
             var aBlot = {};
 
             aCase.line = event.currentTarget.id.charAt(0);
             aCase.column = event.currentTarget.id.charAt(1);
-
 
 
             if ($("span:first", $(this)).hasClass("whiteBlot"))
