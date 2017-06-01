@@ -2,6 +2,9 @@ package com.monirapps.yote.engine;
 
 import com.monirapps.yote.engine.player.Player;
 import com.monirapps.yote.engine.player.Player.Move;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 import java.util.Observable;
@@ -24,6 +27,12 @@ public class Game extends Observable
 
         List<Player.Move> getLegalMoves(Board.Case aCase);
     }
+
+    public static final String CURRENT_PLAYER = "currentPlayer";
+
+    public static final String PLAYERS = "players";
+
+    public static final String BOARD = "board";
 
     private Board board = new Board();
 
@@ -73,6 +82,7 @@ public class Game extends Observable
         board.playMove(currentPlayer(), opponentPlayer(), currentMove);
         player1Turn = !player1Turn;
         setChanged();
+        toJson();
         notifyObservers(getBoardJSString());
     }
 
@@ -112,5 +122,25 @@ public class Game extends Observable
     public String getBoardJSString()
     {
         return board.toString().replaceAll("\n", "#");
+    }
+
+    public JSONObject toJson() {
+        final JSONObject gameObject = new JSONObject();
+        try
+        {
+            gameObject.put(CURRENT_PLAYER, currentPlayer().getColor().namedColor);
+            JSONArray playersArray = new JSONArray();
+            for (Player player : players)
+            {
+                playersArray.put(player.toJson(board));
+            }
+            gameObject.put(PLAYERS, playersArray);
+            gameObject.put(BOARD, board.toJson());
+        }
+        catch (JSONException e)
+        {
+            e.printStackTrace();
+        }
+        return gameObject;
     }
 }

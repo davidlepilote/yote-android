@@ -3,7 +3,10 @@ package com.monirapps.yote.engine.player;
 import android.support.v4.util.Pair;
 
 import com.monirapps.yote.engine.Board;
+import com.monirapps.yote.engine.Board.Blot.BlotColor;
 import com.monirapps.yote.engine.Board.Case;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -55,6 +58,12 @@ public abstract class Player
 
   public static final int NB_BLOTS = 12;
 
+  public static final String COLOR = "color";
+
+  public static final String VALUE = "value";
+
+  public static final String BLOTS = "blots";
+
   private final Board.Blot.BlotColor color;
 
   private final Deque<Board.Blot> blots = new ArrayDeque<>(NB_BLOTS);
@@ -63,6 +72,11 @@ public abstract class Player
   {
     this.color = color;
     init();
+  }
+
+  public BlotColor getColor()
+  {
+    return color;
   }
 
   @Override
@@ -185,5 +199,24 @@ public abstract class Player
   public boolean hasLost(Board board)
   {
     return blotsLeft(board) == 0;
+  }
+
+  public JSONObject toJson() {
+    return toJson(null);
+  }
+
+  public JSONObject toJson(Board board) {
+    final JSONObject playerJSON = new JSONObject();
+    try
+    {
+      playerJSON.put(COLOR, color.namedColor);
+      playerJSON.put(VALUE, color.value);
+      playerJSON.put(BLOTS, board != null ? blotsLeft(board) : blots.size());
+    }
+    catch (JSONException e)
+    {
+      e.printStackTrace();
+    }
+    return playerJSON;
   }
 }

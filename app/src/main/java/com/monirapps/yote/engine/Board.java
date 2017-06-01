@@ -1,9 +1,11 @@
 package com.monirapps.yote.engine;
 
 import android.support.v4.util.Pair;
+import android.support.v7.widget.LinearLayoutCompat.OrientationMode;
 
 import com.google.gson.annotations.SerializedName;
 import com.monirapps.yote.engine.player.Player;
+import org.json.JSONArray;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -161,9 +163,19 @@ public class Board implements Iterable<Board.Case>{
 
         public enum BlotColor{
             @SerializedName("white")
-            WHITE,
+            WHITE("white", 1),
             @SerializedName("black")
-            BLACK;
+            BLACK("black", -1);
+
+            public final String namedColor;
+
+            public final int value;
+
+            BlotColor(String namedColor, int value)
+            {
+                this.namedColor = namedColor;
+                this.value = value;
+            }
 
             public BlotColor opposite(){
                 switch (this){
@@ -175,6 +187,8 @@ public class Board implements Iterable<Board.Case>{
                         throw new IllegalStateException();
                 }
             }
+
+
         }
 
         public Blot(BlotColor color) {
@@ -251,5 +265,19 @@ public class Board implements Iterable<Board.Case>{
                 cases[line][column] = new Case(line, column);
             }
         }
+    }
+
+    public JSONArray toJson() {
+        final JSONArray boardJson = new JSONArray();
+        for (Case[] caseRow : cases)
+        {
+            final JSONArray rowJson = new JSONArray();
+            for (Case aCase : caseRow)
+            {
+                rowJson.put(aCase.blot == null ? 0 : aCase.blot.color.value);
+            }
+            boardJson.put(rowJson);
+        }
+        return boardJson;
     }
 }
