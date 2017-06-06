@@ -14,7 +14,7 @@ import java.util.Iterator;
 /**
  * Created by David et Monireh on 15/11/2016.
  */
-public class Board implements Iterable<Board.Case>{
+public final class Board implements Iterable<Board.Case>{
 
     @Override
     public String toString() {

@@ -8,7 +8,7 @@ import java.util.Random;
 /**
  * Created by David et Monireh on 29/05/2017.
  */
-public class RandomPlayer extends Player {
+public final class RandomPlayer extends Player {
 
     Random random;
 

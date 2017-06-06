@@ -1,3 +1,6 @@
+var actualBlotLegalMoves = [];
+var currentCase = {};
+var currentJumpMove = {};
 
  $(function() {
 
@@ -5,75 +8,233 @@
     $('body').on('click', '.tile', function (event)
     {
           $(".tile").removeClass("clickedTile");
-          $(this).toggleClass('clickedTile');
 
+          $(this).addClass('clickedTile');
 
-            var test = new Case(4,5);
+          if (isTileATarget($(this)))
+          {
+              console.log("makarena " + currentJumpMove.cases);
+              var targetCase = getCaseFromTile($(this));
+              currentJumpMove.cases.push(targetCase);
+              sendMoveToApp(currentJumpMove);
+          }
+          else
+          {
+            console.log("removing target class");
 
-            var aCase = {};
-            var aBlot = {};
+            $(".tile span").removeClass("target");
+          }
 
-            aCase.line = event.currentTarget.id.charAt(0);
-            aCase.column = event.currentTarget.id.charAt(1);
-
-
-            if ($("span:first", $(this)).hasClass("whiteBlot"))
+          if (isBlotPresentOnTile($(this)) && isTileATarget($(this)) == false)
+          {
+            clickedOnTiltWithBlot($(this), event);
+          }
+          else if (isTileCorrectMove($(this)))
+          {
+            if (isJumpMove($(this)))
             {
-                aBlot.color = "white";
+
+               var destination = getCaseFromTile($(this));
+               var eatenCase = getEatenCase(currentCase, destination);
+
+               var cases = [];
+               cases.push(currentCase);
+               cases.push(eatenCase);
+               cases.push(destination);
+               currentJumpMove = new Move(cases, "JUMP");
+
+               var numberOfTargets = handleEatableOpponentBlots(eatenCase);
+               console.log("Jumping " + numberOfTargets);
+
+               if (numberOfTargets == 0)
+               {
+                    console.log("Jumping over a blot and taking from player");
+                    currentJumpMove.cases.push(null);
+                    sendMoveToApp(currentJumpMove);
+               }
             }
-            else if ($("span:first", $(this)).hasClass("blackBlot"))
+            else
             {
-                aBlot.color = "black";
+                var destination = getCaseFromTile($(this));
+                var cases = [];
+                cases.push(currentCase);
+                cases.push(destination);
+                var move = new Move(cases, "SLIDE");
+                sendMoveToApp(move);
             }
 
-            aCase.blot = aBlot;
+          }
 
-
-
-            if (typeof aCase.blot.color !== 'undefined')
-            {
-                android.getLegalMoves(JSON.stringify(aCase));
-                console.log("clicked on  Tile : " + event.currentTarget.id + "+ with Case[line: "
-                            +aCase.line + ", column: " + aCase.column + ", Blot[color: " + aCase.blot.color + "]]");
-            }
     });
 
  });
+
+ function isTileATarget(tile)
+ {
+    return $("span", tile).hasClass("target");
+ }
+ function handleEatableOpponentBlots(eatenCase)
+ {
+    var numberOfTargets;
+    if (eatenCase.blot.color == "white")
+    {
+        numberOfTargets = $('.tile span.whiteBlot').length-1;
+        $(".tile span.whiteBlot").addClass("target");
+    }
+    else
+    {
+       numberOfTargets = $('.tile span.blackBlot').length-1;
+       $(".tile span.blackBlot").addClass("target");
+    }
+
+
+    var eatenId = "" + eatenCase.line + eatenCase.column;
+
+    $('#' + eatenId +" span").removeClass("target");
+
+    return numberOfTargets;
+ }
+
+ function getEatenCase(origin, destination)
+ {
+    var eatenLine;
+    var eatenColumn;
+
+     console.log('id malou : origineline(' + origin.line + ')| destinationline(' + destination.line+')');
+     console.log('id malou : originecolumn(' + origin.column + ')| destinationcolumn(' + destination.column+')');
+
+    if (origin.line == destination.line)
+    {
+        if (destination.column > origin.column)
+        {
+            eatenColumn = parseFloat(origin.column) + 1;
+        }
+        else
+        {
+            eatenColumn = parseFloat(origin.column) - 1;
+        }
+
+        eatenLine = origin.line;
+    }
+    else
+    {
+        if (destination.line > origin.line)
+        {
+            eatenLine = parseFloat(origin.line) + 1;
+        }
+        else
+        {
+            eatenLine = parseFloat(origin.line) - 1;
+        }
+
+        eatenColumn = origin.column;
+    }
+    var id = "" + eatenLine + eatenColumn;
+
+    var eatenCase = getCaseFromTile($('#' + id));
+    return eatenCase;
+ }
+
+ function getCaseFromTile(tile)
+ {
+     var line =  tile.attr('id').charAt(0);
+     var column =  tile.attr('id').charAt(1);
+
+     console.log("onGetCaseFromTile line(" + line + ") column("  +column + ")");
+
+
+     var aCase = new Case(line,column);
+
+     var aBlot;
+
+        if ($("span:first", tile).hasClass("whiteBlot"))
+        {
+            aBlot = new Blot("white");
+        }
+        else if ($("span:first", tile).hasClass("blackBlot"))
+        {
+            aBlot = new Blot("black");
+
+        }
+
+        aCase.blot = aBlot;
+
+        return aCase;
+ }
+
+
+ function isBlotPresentOnTile(tile)
+ {
+    return $("span:first", tile).hasClass("blot");
+ }
+
+ function isTileCorrectMove(tile)
+ {
+     return $("span:first", tile).hasClass("previsionBlot");
+ }
+
+ function isJumpMove(tile)
+  {
+      return $("span:first", tile).hasClass("jumpMove");
+  }
+
+ function clickedOnTiltWithBlot(tile, event)
+ {
+    currentCase = getCaseFromTile(tile);
+
+
+    if (typeof currentCase.blot.color !== 'undefined')
+    {
+        android.getLegalMoves(JSON.stringify(currentCase));
+        console.log("clicked on  Tile : " + event.currentTarget.id + "+ with Case[line: "
+                    +currentCase.line + ", column: " + currentCase.column + ", Blot[color: " + currentCase.blot.color + "]]");
+    }
+ }
 
 function play()
 {
     android.play();
 }
 
+function sendMoveToApp(move)
+{
+    console.log("id malou , json jump = " + JSON.stringify(move));
+    android.playMove(JSON.stringify(move));
+}
+
 function showLegalMoves(legalMoves)
 {
-    var jsonArray = JSON.parse(legalMoves);
+    actualBlotLegalMoves = JSON.parse(legalMoves);
 
-    console.log("okokok " + JSON.stringify(jsonArray));
+    console.log("okokok " + JSON.stringify(actualBlotLegalMoves));
 
     $(".tile span").removeClass("previsionBlot");
+    $(".tile span").removeClass("jumpMove");
 
-    for (var move = 0; move < jsonArray.length; move++)
+    for (var move = 0; move < actualBlotLegalMoves.length; move++)
     {
-        console.log("okokok " + jsonArray[move].cases[1].line + "|" + jsonArray[move].cases[1].column);
+        console.log("okokok " + actualBlotLegalMoves[move].cases[1].line + "|" + actualBlotLegalMoves[move].cases[1].column);
 
-        if (jsonArray[move].type == "JUMP")
+        if (actualBlotLegalMoves[move].type == "JUMP")
         {
-            var selectedId = "" + jsonArray[move].cases[2].line + jsonArray[move].cases[2].column;
+            var selectedId = "" + actualBlotLegalMoves[move].cases[2].line + actualBlotLegalMoves[move].cases[2].column;
+            $('#' + selectedId+" span").addClass('jumpMove');
         }
         else
         {
-            var selectedId = "" + jsonArray[move].cases[1].line + jsonArray[move].cases[1].column;
+            var selectedId = "" + actualBlotLegalMoves[move].cases[1].line + actualBlotLegalMoves[move].cases[1].column;
         }
-
 
         $('#' + selectedId+" span").addClass('previsionBlot');
 
     }
 
 }
+
+
  function update(board)
  {
+    console.log("javascript side, updating array :" + board);
      var drawnBoard = "";
      var counter = 0;
      var line = 0;

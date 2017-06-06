@@ -2,9 +2,11 @@ package com.monirapps.yote.engine.player;
 
 import android.support.v4.util.Pair;
 
+import com.google.gson.annotations.SerializedName;
 import com.monirapps.yote.engine.Board;
 import com.monirapps.yote.engine.Board.Blot.BlotColor;
 import com.monirapps.yote.engine.Board.Case;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -19,204 +21,207 @@ import java.util.List;
  * Created by David et Monireh on 15/11/2016.
  */
 public abstract class Player
-    implements Playable
+        implements Playable
 {
 
-  public static class Move
-  {
-
-    public Move(MoveType type, Board.Case... cases)
+    public static class Move
     {
-      this.type = type;
-      this.cases = cases;
+        public Move(MoveType type, Board.Case... cases)
+        {
+            this.type = type;
+            this.cases = cases;
+        }
+
+        public enum MoveType
+                implements Comparable<MoveType>
+        {
+            @SerializedName("JUMP")
+            JUMP,
+            @SerializedName("SLIDE")
+            SLIDE,
+            @SerializedName("ADD")
+            ADD;
+        }
+
+        public final MoveType type;
+
+        public final Board.Case[] cases;
+
+        @Override
+        public String toString()
+        {
+            switch (type)
+            {
+                case ADD:
+                    return type + " : " + cases[0].line + "," + cases[0].column;
+                default:
+                    return type + " : " + cases[0].line + "," + cases[0].column + " -> " + cases[1].line + "," + cases[1].column;
+            }
+        }
     }
 
-    public enum MoveType
-        implements Comparable<MoveType>
+    public static final int NB_BLOTS = 12;
+
+    public static final String COLOR = "color";
+
+    public static final String VALUE = "value";
+
+    public static final String BLOTS = "blots";
+
+    private final Board.Blot.BlotColor color;
+
+    private final Deque<Board.Blot> blots = new ArrayDeque<>(NB_BLOTS);
+
+    public Player(Board.Blot.BlotColor color)
     {
-      JUMP,
-      SLIDE,
-      ADD;
+        this.color = color;
+        init();
     }
 
-    public final MoveType type;
-
-    public final Board.Case[] cases;
+    public BlotColor getColor()
+    {
+        return color;
+    }
 
     @Override
-    public String toString()
+    public void init()
     {
-      switch (type)
-      {
-        case ADD:
-          return type + " : " + cases[0].line + "," + cases[0].column;
-        default:
-          return type + " : " + cases[0].line + "," + cases[0].column + " -> " + cases[1].line + "," + cases[1].column;
-      }
-    }
-  }
-
-  public static final int NB_BLOTS = 12;
-
-  public static final String COLOR = "color";
-
-  public static final String VALUE = "value";
-
-  public static final String BLOTS = "blots";
-
-  private final Board.Blot.BlotColor color;
-
-  private final Deque<Board.Blot> blots = new ArrayDeque<>(NB_BLOTS);
-
-  public Player(Board.Blot.BlotColor color)
-  {
-    this.color = color;
-    init();
-  }
-
-  public BlotColor getColor()
-  {
-    return color;
-  }
-
-  @Override
-  public void init()
-  {
-    this.blots.clear();
-    for (int nbBlot = 0; nbBlot < NB_BLOTS; nbBlot++)
-    {
-      blots.add(new Board.Blot(this.color));
-    }
-  }
-
-  public Board.Blot takeBlot()
-  {
-    return blots.pop();
-  }
-
-  public int blotsLeft(Board board)
-  {
-    int nbBlots = blots.size();
-    for (Board.Case[] cases : board.cases)
-    {
-      for (Board.Case aCase : cases)
-      {
-        if (aCase.isSameColor(color))
+        this.blots.clear();
+        for (int nbBlot = 0; nbBlot < NB_BLOTS; nbBlot++)
         {
-          nbBlots++;
+            blots.add(new Board.Blot(this.color));
         }
-      }
     }
-    return nbBlots;
-    //return blots.size() + (int) Stream.of(board.cases).flatMap(Stream::of).filter(aCase -> aCase.isSameColor(color)).count();
-  }
 
-  public boolean hasNonPlayedBlots()
-  {
-    return !blots.isEmpty();
-  }
-
-  /**
-   * Lists all the legal moves that can be :
-   * - add a blot to the given case
-   * - move a blot from a given case to an adjacent case
-   * - jump over an opponent blot, and taking another opponent's blot (one move by other blot)
-   *
-   * @param board
-   * @return all legal moves for the given player and board
-   */
-  private List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots, Iterable<Case> cases)
-  {
-    List<Move> moves = new ArrayList<>();
-    for (Board.Case aCase : cases)
+    public Board.Blot takeBlot()
     {
-      // Try to add a ADD Move
-      if (aCase.isEmpty() && !blots.isEmpty())
-      {
-        moves.add(new Move(Move.MoveType.ADD, aCase));
-      }
-      else if (aCase.isSameColor(color))
-      {
-        for (Board.Direction direction : Board.Direction.values())
+        return blots.pop();
+    }
+
+    public int blotsLeft(Board board)
+    {
+        int nbBlots = blots.size();
+        for (Board.Case[] cases : board.cases)
         {
-          // Try to add a SLIDE Move
-          Board.Case slidingCase = board.moveTo(aCase, direction);
-          if (slidingCase != null)
-          {
-            moves.add(new Move(Move.MoveType.SLIDE, aCase, slidingCase));
-          }
-          // Try to add a JUMP Move
-          Pair<Board.Case, Board.Case> newCase = board.jumpTo(aCase, direction);
-          if (newCase != null)
-          {
-            final Board.Case opponentCase = newCase.first;
-            final Board.Case jumpedCase = newCase.second;
-            for (Board.Case otherOpponentCase : board)
+            for (Board.Case aCase : cases)
             {
-              if (otherOpponentCase.isOpponentColor(color) && otherOpponentCase != opponentCase)
-              {
-                moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, otherOpponentCase));
-              }
+                if (aCase.isSameColor(color))
+                {
+                    nbBlots++;
+                }
             }
-            // The opponent other blot is taken from his own stack
-            if (opponentHasNonPlayedBlots)
-            {
-              moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, null));
-            }
-          }
         }
-      }
+        return nbBlots;
+        //return blots.size() + (int) Stream.of(board.cases).flatMap(Stream::of).filter(aCase -> aCase.isSameColor(color)).count();
     }
-    return moves;
-  }
 
-  /**
-   * Lists all the legal moves that can be :
-   * - add a blot to the given case
-   * - move a blot from a given case to an adjacent case
-   * - jump over an opponent blot, and taking another opponent's blot (one move by other blot)
-   *
-   * @param board
-   * @return all legal moves for the given player and board
-   */
-  public List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots)
-  {
-    return legalMoves(board, opponentHasNonPlayedBlots, board);
-  }
-
-  /**
-   * Lists all the legal moves playable from a particular case :
-   * @param board
-   * @param aCase
-   * @return all legal moves for the given player and board
-   */
-  public List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots, Board.Case aCase)
-  {
-    return legalMoves(board, opponentHasNonPlayedBlots, Collections.singleton(aCase));
-  }
-
-
-  public boolean hasLost(Board board)
-  {
-    return blotsLeft(board) == 0;
-  }
-
-  public JSONObject toJson() {
-    return toJson(null);
-  }
-
-  public JSONObject toJson(Board board) {
-    final JSONObject playerJSON = new JSONObject();
-    try
+    public boolean hasNonPlayedBlots()
     {
-      playerJSON.put(COLOR, color.namedColor);
-      playerJSON.put(VALUE, color.value);
-      playerJSON.put(BLOTS, board != null ? blotsLeft(board) : blots.size());
+        return !blots.isEmpty();
     }
-    catch (JSONException e)
+
+    /**
+     * Lists all the legal moves that can be :
+     * - add a blot to the given case
+     * - move a blot from a given case to an adjacent case
+     * - jump over an opponent blot, and taking another opponent's blot (one move by other blot)
+     *
+     * @param board
+     * @return all legal moves for the given player and board
+     */
+    private List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots, Iterable<Case> cases)
     {
-      e.printStackTrace();
+        List<Move> moves = new ArrayList<>();
+        for (Board.Case aCase : cases)
+        {
+            // Try to add a ADD Move
+            if (aCase.isEmpty() && !blots.isEmpty())
+            {
+                moves.add(new Move(Move.MoveType.ADD, aCase));
+            } else if (aCase.isSameColor(color))
+            {
+                for (Board.Direction direction : Board.Direction.values())
+                {
+                    // Try to add a SLIDE Move
+                    Board.Case slidingCase = board.moveTo(aCase, direction);
+                    if (slidingCase != null)
+                    {
+                        moves.add(new Move(Move.MoveType.SLIDE, aCase, slidingCase));
+                    }
+                    // Try to add a JUMP Move
+                    Pair<Board.Case, Board.Case> newCase = board.jumpTo(aCase, direction);
+                    if (newCase != null)
+                    {
+                        final Board.Case opponentCase = newCase.first;
+                        final Board.Case jumpedCase = newCase.second;
+                        for (Board.Case otherOpponentCase : board)
+                        {
+                            if (otherOpponentCase.isOpponentColor(color) && otherOpponentCase != opponentCase)
+                            {
+                                moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, otherOpponentCase));
+                            }
+                        }
+                        // The opponent other blot is taken from his own stack
+                        if (opponentHasNonPlayedBlots)
+                        {
+                            moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, null));
+                        }
+                    }
+                }
+            }
+        }
+        return moves;
     }
-    return playerJSON;
-  }
+
+    /**
+     * Lists all the legal moves that can be :
+     * - add a blot to the given case
+     * - move a blot from a given case to an adjacent case
+     * - jump over an opponent blot, and taking another opponent's blot (one move by other blot)
+     *
+     * @param board
+     * @return all legal moves for the given player and board
+     */
+    public List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots)
+    {
+        return legalMoves(board, opponentHasNonPlayedBlots, board);
+    }
+
+    /**
+     * Lists all the legal moves playable from a particular case :
+     *
+     * @param board
+     * @param aCase
+     * @return all legal moves for the given player and board
+     */
+    public List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots, Board.Case aCase)
+    {
+        return legalMoves(board, opponentHasNonPlayedBlots, Collections.singleton(aCase));
+    }
+
+
+    public boolean hasLost(Board board)
+    {
+        return blotsLeft(board) == 0;
+    }
+
+    public JSONObject toJson()
+    {
+        return toJson(null);
+    }
+
+    public JSONObject toJson(Board board)
+    {
+        final JSONObject playerJSON = new JSONObject();
+        try
+        {
+            playerJSON.put(COLOR, color.namedColor);
+            playerJSON.put(VALUE, color.value);
+            playerJSON.put(BLOTS, board != null ? blotsLeft(board) : blots.size());
+        } catch (JSONException e)
+        {
+            e.printStackTrace();
+        }
+        return playerJSON;
+    }
 }

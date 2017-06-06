@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, Game.PlayMoveListener
+public final class MainActivity extends AppCompatActivity implements View.OnClickListener, Game.PlayMoveListener
 {
 
     private YoteView yoteUI;
@@ -77,6 +77,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
             }
         });
+    }
+
+    @Override
+    public void playMove(final Player.Move move)
+    {
+        runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                game.playMove(move);
+            }
+        });
+
     }
 
     @Override

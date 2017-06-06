@@ -2,6 +2,7 @@ package com.monirapps.yote.engine;
 
 import com.monirapps.yote.engine.player.Player;
 import com.monirapps.yote.engine.player.Player.Move;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,7 +13,7 @@ import java.util.Observable;
 /**
  * Created by David et Monireh on 29/05/2017.
  */
-public class Game extends Observable
+public final class Game extends Observable
 {
 
 
@@ -24,6 +25,8 @@ public class Game extends Observable
     public interface PlayMoveListener
     {
         void play();
+
+        void playMove(Move move);
 
         List<Player.Move> getLegalMoves(Board.Case aCase);
     }
@@ -86,6 +89,27 @@ public class Game extends Observable
         notifyObservers(getBoardJSString());
     }
 
+    public void playMove(final Move move)
+    {
+        move.cases[0] = board.cases[move.cases[0].line][move.cases[0].column];
+        move.cases[1] = board.cases[move.cases[1].line][move.cases[1].column];
+        if (move.type.equals(Move.MoveType.JUMP))
+        {
+            move.cases[2] = board.cases[move.cases[2].line][move.cases[2].column];
+            if (move.cases[3] != null)
+            {
+                move.cases[3] = board.cases[move.cases[3].line][move.cases[3].column];
+            }
+        }
+
+        currentMove = move;
+        board.playMove(currentPlayer(), opponentPlayer(), move);
+        player1Turn = !player1Turn;
+        setChanged();
+        toJson();
+        notifyObservers(getBoardJSString());
+    }
+
 
     public List<Player.Move> getLegalMoves(Board.Case aCase)
     {
@@ -124,7 +148,8 @@ public class Game extends Observable
         return board.toString().replaceAll("\n", "#");
     }
 
-    public JSONObject toJson() {
+    public JSONObject toJson()
+    {
         final JSONObject gameObject = new JSONObject();
         try
         {
@@ -136,8 +161,7 @@ public class Game extends Observable
             }
             gameObject.put(PLAYERS, playersArray);
             gameObject.put(BOARD, board.toJson());
-        }
-        catch (JSONException e)
+        } catch (JSONException e)
         {
             e.printStackTrace();
         }
