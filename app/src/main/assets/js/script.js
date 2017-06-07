@@ -64,6 +64,16 @@ var currentJumpMove = {};
             }
 
           }
+          else if (isTileATarget($(this)) == false)
+          {
+            var cases = [];
+            var aCase = getCaseFromTile($(this));
+            cases.push(aCase);
+            var move = new Move(cases, "ADD");
+            sendMoveToApp(move);
+
+            console.log("here we can doo the creation move");
+          }
 
     });
 

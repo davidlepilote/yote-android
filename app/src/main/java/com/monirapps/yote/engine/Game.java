@@ -91,16 +91,23 @@ public final class Game extends Observable
 
     public void playMove(final Move move)
     {
-        move.cases[0] = board.cases[move.cases[0].line][move.cases[0].column];
-        move.cases[1] = board.cases[move.cases[1].line][move.cases[1].column];
-        if (move.type.equals(Move.MoveType.JUMP))
+        if (move.type == Move.MoveType.ADD)
         {
-            move.cases[2] = board.cases[move.cases[2].line][move.cases[2].column];
-            if (move.cases[3] != null)
+            move.cases[0] = board.cases[move.cases[0].line][move.cases[0].column];
+        } else
+        {
+            move.cases[0] = board.cases[move.cases[0].line][move.cases[0].column];
+            move.cases[1] = board.cases[move.cases[1].line][move.cases[1].column];
+            if (move.type.equals(Move.MoveType.JUMP))
             {
-                move.cases[3] = board.cases[move.cases[3].line][move.cases[3].column];
+                move.cases[2] = board.cases[move.cases[2].line][move.cases[2].column];
+                if (move.cases[3] != null)
+                {
+                    move.cases[3] = board.cases[move.cases[3].line][move.cases[3].column];
+                }
             }
         }
+
 
         currentMove = move;
         board.playMove(currentPlayer(), opponentPlayer(), move);
