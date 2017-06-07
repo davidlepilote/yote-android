@@ -86,7 +86,7 @@ public final class Game extends Observable
         player1Turn = !player1Turn;
         setChanged();
         toJson();
-        notifyObservers(getBoardJSString());
+        notifyObservers(toJson());
     }
 
     public void playMove(final Move move)
@@ -114,7 +114,7 @@ public final class Game extends Observable
         player1Turn = !player1Turn;
         setChanged();
         toJson();
-        notifyObservers(getBoardJSString());
+        notifyObservers(toJson());
     }
 
 

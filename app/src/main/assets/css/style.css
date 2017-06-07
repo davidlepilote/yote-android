@@ -17,6 +17,23 @@
     margin-top: 20px;
 }
 
+#playersTab
+{
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+#playersTab span
+{
+
+}
+
+#playersTab .currentPlayer
+{
+    text-decoration: underline;
+}
+
 .row
 {
     width: 100%;

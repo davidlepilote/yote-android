@@ -1,6 +1,9 @@
 var actualBlotLegalMoves = [];
 var currentCase = {};
 var currentJumpMove = {};
+var whitePlayer = {};
+var blackPlayer = {};
+var currentPlayer = {};
 
  $(function() {
 
@@ -10,18 +13,18 @@ var currentJumpMove = {};
           $(".tile").removeClass("clickedTile");
 
           $(this).addClass('clickedTile');
+          var line =  $(this).attr('id').charAt(0);
+          var column =  $(this).attr('id').charAt(1);
+          console.log("thomas tile clicked : " + line + ","+column);
 
           if (isTileATarget($(this)))
           {
-              console.log("makarena " + currentJumpMove.cases);
               var targetCase = getCaseFromTile($(this));
               currentJumpMove.cases.push(targetCase);
               sendMoveToApp(currentJumpMove);
           }
           else
           {
-            console.log("removing target class");
-
             $(".tile span").removeClass("target");
           }
 
@@ -44,11 +47,9 @@ var currentJumpMove = {};
                currentJumpMove = new Move(cases, "JUMP");
 
                var numberOfTargets = handleEatableOpponentBlots(eatenCase);
-               console.log("Jumping " + numberOfTargets);
 
                if (numberOfTargets == 0)
                {
-                    console.log("Jumping over a blot and taking from player");
                     currentJumpMove.cases.push(null);
                     sendMoveToApp(currentJumpMove);
                }
@@ -64,15 +65,13 @@ var currentJumpMove = {};
             }
 
           }
-          else if (isTileATarget($(this)) == false)
+          else if (isTileATarget($(this)) == false && (currentPlayer.blots - currentPlayer.blotsOnBoard) > 0)
           {
             var cases = [];
             var aCase = getCaseFromTile($(this));
             cases.push(aCase);
             var move = new Move(cases, "ADD");
             sendMoveToApp(move);
-
-            console.log("here we can doo the creation move");
           }
 
     });
@@ -110,8 +109,6 @@ var currentJumpMove = {};
     var eatenLine;
     var eatenColumn;
 
-     console.log('id malou : origineline(' + origin.line + ')| destinationline(' + destination.line+')');
-     console.log('id malou : originecolumn(' + origin.column + ')| destinationcolumn(' + destination.column+')');
 
     if (origin.line == destination.line)
     {
@@ -149,9 +146,6 @@ var currentJumpMove = {};
  {
      var line =  tile.attr('id').charAt(0);
      var column =  tile.attr('id').charAt(1);
-
-     console.log("onGetCaseFromTile line(" + line + ") column("  +column + ")");
-
 
      var aCase = new Case(line,column);
 
@@ -196,8 +190,6 @@ var currentJumpMove = {};
     if (typeof currentCase.blot.color !== 'undefined')
     {
         android.getLegalMoves(JSON.stringify(currentCase));
-        console.log("clicked on  Tile : " + event.currentTarget.id + "+ with Case[line: "
-                    +currentCase.line + ", column: " + currentCase.column + ", Blot[color: " + currentCase.blot.color + "]]");
     }
  }
 
@@ -208,7 +200,6 @@ function play()
 
 function sendMoveToApp(move)
 {
-    console.log("id malou , json jump = " + JSON.stringify(move));
     android.playMove(JSON.stringify(move));
 }
 
@@ -216,14 +207,12 @@ function showLegalMoves(legalMoves)
 {
     actualBlotLegalMoves = JSON.parse(legalMoves);
 
-    console.log("okokok " + JSON.stringify(actualBlotLegalMoves));
 
     $(".tile span").removeClass("previsionBlot");
     $(".tile span").removeClass("jumpMove");
 
     for (var move = 0; move < actualBlotLegalMoves.length; move++)
     {
-        console.log("okokok " + actualBlotLegalMoves[move].cases[1].line + "|" + actualBlotLegalMoves[move].cases[1].column);
 
         if (actualBlotLegalMoves[move].type == "JUMP")
         {
@@ -242,49 +231,104 @@ function showLegalMoves(legalMoves)
 }
 
 
- function update(board)
+ function update(stringBoard)
  {
-    console.log("javascript side, updating array :" + board);
+     var jsonBoard = JSON.parse(stringBoard);
+
+        console.log("thomas board received : " + jsonBoard.board);
+    // We define the players here
+     var currentPlayerColor = jsonBoard.currentPlayer;
+     whitePlayer = new Player(jsonBoard.players[0].color, parseFloat(jsonBoard.players[0].value), parseFloat(jsonBoard.players[0].blots));
+     blackPlayer = new Player(jsonBoard.players[1].color, parseFloat(jsonBoard.players[1].value), parseFloat(jsonBoard.players[1].blots));
+
+
+
+
+     var board = jsonBoard.board;
+
+    // Then, we draw the board
      var drawnBoard = "";
-     var counter = 0;
      var line = 0;
      var column = 0;
      drawnBoard += '<div class="row">';
 
     for (var i = 0; i < board.length; i++)
     {
-        var c = board.charAt(i);
 
-        var id = "" + line + column;
-        switch (c)
+        for (var j = 0; j < board[i].length; j++)
         {
-            case '#':
-                counter--;
-                line++;
-                column = -1;
-                drawnBoard += '</div>';
-                if (i != board.length - 1)
-                {
-                  drawnBoard += '<div class="row">';
-                }
-            break;
-            case '¤':
-                 drawnBoard += '<span class="tile" id="' +id+ '"><span/></span>';
-            break;
-            case 'W':
-                drawnBoard += '<span class="tile" id="' +id+ '"><span class="blot whiteBlot"/></span>';
-            break;
-            case 'B':
-                drawnBoard += '<span class="tile" id="' +id+ '"><span class="blot blackBlot"/></span>';
-            break;
-           default:
-                drawnBoard += c;
-           break;
+           var id = "" + line + column;
+
+            if (parseFloat(board[i][j]) == whitePlayer.value)
+            {
+              console.log("thomas, we draw a white blot");
+              drawnBoard += '<span class="tile" id="' +id+ '"><span class="blot whiteBlot"/></span>';
+            }
+            else if (parseFloat(board[i][j]) == blackPlayer.value)
+             {
+               drawnBoard += '<span class="tile" id="' +id+ '"><span class="blot blackBlot"/></span>';
+             }
+             else
+             {
+               drawnBoard += '<span class="tile" id="' +id+ '"><span/></span>';
+             }
+             column++;
         }
-        counter++;
-        column++;
+
+        line++;
+        column = 0;
+        drawnBoard += '</div>';
+        if (i != board.length - 1)
+        {
+          drawnBoard += '<div class="row">';
+        }
+
     }
 
     $('#board').html(drawnBoard);
 
+
+    // Dealing with showing actual score on players tab
+
+
+    var whiteBlotsInGame = $('.whiteBlot').length
+    var blackBlotsInGame = $(".blackBlot").length;
+
+    whitePlayer.blotsOnBoard = whiteBlotsInGame;
+    blackPlayer.blotsOnBoard = blackBlotsInGame;
+
+    $("#whitePlayer").html("White " + (whitePlayer.blots - whitePlayer.blotsOnBoard));
+    $("#blackPlayer").html("Black " + (blackPlayer.blots - blackPlayer.blotsOnBoard));
+
+    if (currentPlayerColor == whitePlayer.color)
+    {
+    currentPlayer = whitePlayer;
+    $("#whitePlayer").addClass("currentPlayer");
+    $("#blackPlayer").removeClass("currentPlayer");
+    }
+    else
+    {
+     currentPlayer = blackPlayer;
+     $("#whitePlayer").removeClass("currentPlayer");
+     $("#blackPlayer").addClass("currentPlayer");
+    }
+
+    handleEndGame();
+
+ }
+
+ function handleEndGame()
+ {
+    console.log("babar 2");
+    if ((currentPlayer.blots + currentPlayer.blotsOnBoard) == 0 )
+    {
+        if (currentPlayer.color == "white")
+        {
+           $("#board").html("<strong>Black has won ! </strong>");
+        }
+        else
+        {
+         $("#board").html("<strong>White has won ! </strong>");
+        }
+    }
  }

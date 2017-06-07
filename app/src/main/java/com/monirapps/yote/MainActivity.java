@@ -45,7 +45,7 @@ public final class MainActivity extends AppCompatActivity implements View.OnClic
 
     private void updateUI()
     {
-        yoteUI.update(game.getBoardJSString());
+        yoteUI.update(game.toJson().toString());
     }
 
     @Override
