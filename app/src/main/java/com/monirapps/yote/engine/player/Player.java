@@ -174,4 +174,24 @@ public abstract class Player
         return blotsLeft(board) == 0;
         //return blots.size() == 0 && Stream.of(board.cases).flatMap(Stream::of).filter(aCase -> aCase.isSameColor(color)).count() == 0;
     }
+
+    public JSONObject toJson()
+    {
+        return toJson(null);
+    }
+
+    public JSONObject toJson(Board board)
+    {
+        final JSONObject playerJSON = new JSONObject();
+        try
+        {
+            playerJSON.put(COLOR, color.namedColor);
+            playerJSON.put(VALUE, color.value);
+            playerJSON.put(BLOTS, board != null ? blotsLeft(board) : blots.size());
+        } catch (JSONException e)
+        {
+            e.printStackTrace();
+        }
+        return playerJSON;
+    }
 }

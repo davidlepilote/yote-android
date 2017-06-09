@@ -98,7 +98,7 @@ public final class MainActivity extends AppCompatActivity implements View.OnClic
     @Override
     public List<Player.Move> getLegalMoves(Board.Case aCase)
     {
-        final List<Player.Move> legalMoves = game.getLegalMoves(aCase);
+        final List<Player.Move> legalMoves = game.legalMoves(aCase);
         return legalMoves;
     }
 }
