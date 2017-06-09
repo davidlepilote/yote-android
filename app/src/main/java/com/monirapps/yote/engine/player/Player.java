@@ -36,15 +36,18 @@ public abstract class Player implements Playable {
             switch (type){
                 case ADD:
                     return type + " : " + cases[0].line + "," + cases[0].column;
-                default:
+                case SLIDE:
                     return type + " : " + cases[0].line + "," + cases[0].column + " -> " + cases[1].line + "," + cases[1].column;
+                case JUMP:
+                    return type + " : " + cases[0].line + "," + cases[0].column + " -> " + cases[2].line + "," + cases[2].column;
             }
+            return null;
         }
     }
 
     public static final int NB_BLOTS = 12;
 
-    private final Board.Blot.BlotColor color;
+    public final Board.Blot.BlotColor color;
 
     private final Deque<Board.Blot> blots = new ArrayDeque<>(NB_BLOTS);
 
@@ -65,68 +68,16 @@ public abstract class Player implements Playable {
         return blots.pop();
     }
 
-    public int blotsLeft(Board board) {
-        int nbBlots = blots.size();
-        for (Board.Case[] cases : board.cases) {
-            for (Board.Case aCase : cases) {
-                if (aCase.isSameColor(color)) {
-                    nbBlots++;
-                }
-            }
-        }
-        return nbBlots;
-        //return blots.size() + (int) Stream.of(board.cases).flatMap(Stream::of).filter(aCase -> aCase.isSameColor(color)).count();
+    public void addBlot(Board.Blot blot) {
+        blots.push(blot);
+    }
+
+    public int blotsLeft() {
+        return blots.size();
     }
 
     public boolean hasNonPlayedBlots() {
         return !blots.isEmpty();
     }
 
-    /**
-     * Lists all the legal moves that can be :
-     * - add a blot to the given case
-     * - move a blot from a given case to an adjacent case
-     * - jump over an opponent blot, and taking another opponent's blot (one move by other blot)
-     *
-     * @param board
-     * @return all legal moves for the given player and board
-     */
-    public List<Move> legalMoves(Board board, boolean opponentHasNonPlayedBlots) {
-        List<Move> moves = new ArrayList<>();
-        for (Board.Case aCase : board) {
-            // Try to add a ADD Move
-            if (aCase.isEmpty() && !blots.isEmpty()) {
-                moves.add(new Move(Move.MoveType.ADD, aCase));
-            } else if (aCase.isSameColor(color)) {
-                for (Board.Direction direction : Board.Direction.values()) {
-                    // Try to add a SLIDE Move
-                    Board.Case slidingCase = board.moveTo(aCase, direction);
-                    if (slidingCase != null) {
-                        moves.add(new Move(Move.MoveType.SLIDE, aCase, slidingCase));
-                    }
-                    // Try to add a JUMP Move
-                    Pair<Board.Case, Board.Case> newCase = board.jumpTo(aCase, direction);
-                    if (newCase != null) {
-                        final Board.Case opponentCase = newCase.first;
-                        final Board.Case jumpedCase = newCase.second;
-                        for (Board.Case otherOpponentCase : board) {
-                            if(otherOpponentCase.isOpponentColor(color) && otherOpponentCase != opponentCase){
-                                moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, otherOpponentCase));
-                            }
-                        }
-                        // The opponent other blot is taken from his own stack
-                        if (opponentHasNonPlayedBlots) {
-                            moves.add(new Move(Move.MoveType.JUMP, aCase, opponentCase, jumpedCase, null));
-                        }
-                    }
-                }
-            }
-        }
-        return moves;
-    }
-
-    public boolean hasLost(Board board) {
-        return blotsLeft(board) == 0;
-        //return blots.size() == 0 && Stream.of(board.cases).flatMap(Stream::of).filter(aCase -> aCase.isSameColor(color)).count() == 0;
-    }
 }

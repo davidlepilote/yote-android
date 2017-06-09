@@ -2,11 +2,13 @@ package com.monirapps.yote;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
 import com.monirapps.yote.engine.Board;
 import com.monirapps.yote.engine.Game;
+import com.monirapps.yote.engine.player.MinimaxPlayer;
 import com.monirapps.yote.engine.player.Player;
 import com.monirapps.yote.engine.player.RandomPlayer;
 import com.monirapps.yote.ui.YoteView;
@@ -32,6 +34,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     start.setOnClickListener(this);
 
     yoteUI.setOnPlayMoveListener(this);
+
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        game = new Game(new MinimaxPlayer(Board.Blot.BlotColor.WHITE), new MinimaxPlayer(Board.Blot.BlotColor.BLACK));
+        while(!game.isOver()) {
+          int turn = game.getTurn();
+          game.play(new Game.Turn() {
+            @Override
+            public Player.Move play(Player currentPlayer, Game game) {
+              return currentPlayer.play(game);
+            }
+          });
+          System.out.println(game.toString());
+        }
+      }
+    }).start();
   }
 
   private void findViews() {
@@ -59,8 +78,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
       public void run() {
         game.play(new Game.Turn() {
           @Override
-          public Player.Move play(Player currentPlayer, Board board, boolean opponentHasNonPlayedBlots) {
-            return currentPlayer.play(board, opponentHasNonPlayedBlots);
+          public Player.Move play(Player currentPlayer, Game game) {
+            return currentPlayer.play(game);
           }
         });
       }
