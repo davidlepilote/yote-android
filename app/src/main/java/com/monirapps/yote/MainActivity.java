@@ -55,7 +55,7 @@ public final class MainActivity extends AppCompatActivity implements View.OnClic
     {
         if (v == start)
         {
-            game = new Game(new RandomPlayer(Board.Blot.BlotColor.WHITE), new RandomPlayer(Board.Blot.BlotColor.BLACK));
+            game = new Game(new RandomPlayer(Board.Blot.BlotColor.WHITE), new MinimaxPlayer(Board.Blot.BlotColor.BLACK, 2));
             game.addObserver(yoteUI);
             updateUI();
         }
@@ -90,6 +90,7 @@ public final class MainActivity extends AppCompatActivity implements View.OnClic
             public void run()
             {
                 game.playMove(move);
+                MainActivity.this.play();
             }
         });
 
@@ -98,7 +99,6 @@ public final class MainActivity extends AppCompatActivity implements View.OnClic
     @Override
     public List<Player.Move> getLegalMoves(Board.Case aCase)
     {
-        final List<Player.Move> legalMoves = game.legalMoves(aCase);
-        return legalMoves;
+        return game.legalMoves(aCase);
     }
 }

@@ -14,6 +14,8 @@ import java.util.Random;
 
 public class MinimaxPlayer extends Player {
 
+  public static final int DEFAULT_DEPTH = 3;
+
   private class EvaluatedMove {
     public Move move;
     public double eval;
@@ -36,15 +38,25 @@ public class MinimaxPlayer extends Player {
 
   private int depth;
 
+  public MinimaxPlayer(Board.Blot.BlotColor color, int depth) {
+    super(color);
+    this.depth = depth;
+    init(depth);
+  }
+
   public MinimaxPlayer(Board.Blot.BlotColor color) {
     super(color);
     init();
   }
 
-  @Override
+  public void init(int depth) {
+    super.init();
+    this.depth = depth;
+  }
+
   public void init() {
     super.init();
-    depth = 3;
+    this.depth = DEFAULT_DEPTH;
   }
 
   @Override

@@ -158,14 +158,7 @@ public final class Game extends Observable {
     return nbBlots;
   }
 
-  public void play(Turn turn) {
-    this.turn++;
-    moves.push(turn.play(currentPlayer(), this));
-    board.playMove(currentPlayer(), opponentPlayer(), moves.peek());
-    player1Turn = !player1Turn;
-    setChanged();
-    notifyObservers(getBoardJSString());
-  }
+
 
   //TODO REMOVE ?
   public void playMove(final Move move) {
@@ -182,13 +175,11 @@ public final class Game extends Observable {
       }
     }
 
+    play(move);
+  }
 
-    moves.push(move);
-    board.playMove(currentPlayer(), opponentPlayer(), move);
-    player1Turn = !player1Turn;
-    setChanged();
-    toJson();
-    notifyObservers(toJson());
+  public void play(Turn turn) {
+    play(turn.play(currentPlayer(), this));
   }
 
   public void play(Player.Move move) {
