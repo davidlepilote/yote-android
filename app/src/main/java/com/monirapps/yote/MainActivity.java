@@ -13,76 +13,92 @@ import com.monirapps.yote.engine.player.Player;
 import com.monirapps.yote.engine.player.RandomPlayer;
 import com.monirapps.yote.ui.YoteView;
 
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, Game.PlayMoveListener {
+public final class MainActivity extends AppCompatActivity implements View.OnClickListener, Game.PlayMoveListener
+{
 
-  private YoteView yoteUI;
+    private YoteView yoteUI;
 
-  private Button start;
+    private Button start;
 
-  private Game game;
+    private Game game;
 
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-    findViews();
+        findViews();
 
-    start.setOnClickListener(this);
+        start.setOnClickListener(this);
 
-    yoteUI.setOnPlayMoveListener(this);
-
-    new Thread(new Runnable() {
-      @Override
-      public void run() {
-        game = new Game(new MinimaxPlayer(Board.Blot.BlotColor.WHITE), new MinimaxPlayer(Board.Blot.BlotColor.BLACK));
-        while(!game.isOver()) {
-          int turn = game.getTurn();
-          game.play(new Game.Turn() {
-            @Override
-            public Player.Move play(Player currentPlayer, Game game) {
-              return currentPlayer.play(game);
-            }
-          });
-          System.out.println(game.toString());
-        }
-      }
-    }).start();
-  }
-
-  private void findViews() {
-    yoteUI = (YoteView) findViewById(R.id.webView);
-    start = (Button) findViewById(R.id.start);
-  }
-
-  private void updateUI() {
-    yoteUI.update(game.getBoardJSString());
-  }
-
-  @Override
-  public void onClick(View v) {
-    if(v == start) {
-      game = new Game(new RandomPlayer(Board.Blot.BlotColor.WHITE), new RandomPlayer(Board.Blot.BlotColor.BLACK));
-      game.addObserver(yoteUI);
-      updateUI();
+        yoteUI.setOnPlayMoveListener(this);
     }
-  }
 
-  @Override
-  public void play() {
-    runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        game.play(new Game.Turn() {
-          @Override
-          public Player.Move play(Player currentPlayer, Game game) {
-            return currentPlayer.play(game);
-          }
+    private void findViews()
+    {
+        yoteUI = (YoteView) findViewById(R.id.webView);
+        start = (Button) findViewById(R.id.start);
+    }
+
+    private void updateUI()
+    {
+        yoteUI.update(game.toJson().toString());
+    }
+
+    @Override
+    public void onClick(View v)
+    {
+        if (v == start)
+        {
+            game = new Game(new RandomPlayer(Board.Blot.BlotColor.WHITE), new RandomPlayer(Board.Blot.BlotColor.BLACK));
+            game.addObserver(yoteUI);
+            updateUI();
+        }
+    }
+
+    @Override
+    public void play()
+    {
+        runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                game.play(new Game.Turn()
+                {
+                    @Override
+                    public Player.Move play(Player currentPlayer, Game game)
+                    {
+                        return currentPlayer.play(game);
+                    }
+                });
+            }
         });
-      }
-    });
-  }
+    }
+
+    @Override
+    public void playMove(final Player.Move move)
+    {
+        runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                game.playMove(move);
+            }
+        });
+
+    }
+
+    @Override
+    public List<Player.Move> getLegalMoves(Board.Case aCase)
+    {
+        final List<Player.Move> legalMoves = game.getLegalMoves(aCase);
+        return legalMoves;
+    }
 }

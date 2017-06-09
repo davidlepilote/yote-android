@@ -3,49 +3,70 @@ package com.monirapps.yote.engine;
 import android.support.v4.util.Pair;
 
 import com.monirapps.yote.engine.player.Player;
+import com.monirapps.yote.engine.player.Player.Move;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.List;
 import java.util.Observable;
 
 /**
  * Created by David et Monireh on 29/05/2017.
  */
-public class Game extends Observable {
+public final class Game extends Observable
+{
 
   public interface Turn {
     Player.Move play(Player currentPlayer, Game game);
   }
 
-  public interface PlayMoveListener {
-    void play();
-  }
+    public interface PlayMoveListener
+    {
+        void play();
 
-  private Board board = new Board();
+        void playMove(Move move);
 
-  private Player[] players = new Player[2];
+        List<Player.Move> getLegalMoves(Board.Case aCase);
+    }
 
-  private boolean player1Turn = true;
+    public static final String CURRENT_PLAYER = "currentPlayer";
 
-  private int turn = 0;
+    public static final String PLAYERS = "players";
+
+    public static final String BOARD = "board";
+
+    private Board board = new Board();
+
+    private Player[] players = new Player[2];
+
+    private boolean player1Turn = true;
+
+    private int turn = 0;
 
   private Deque<Player.Move> moves = new ArrayDeque<>();
 
-  public Game(Player player1, Player player2) {
-    players[0] = player1;
-    players[1] = player2;
-  }
-
-  public void startGame() {
-    turn = 0;
-    board.clear();
-    player1Turn = true;
-    for (Player player : players) {
-      player.init();
+    public Game(Player player1, Player player2)
+    {
+        players[0] = player1;
+        players[1] = player2;
     }
-  }
+
+    public void startGame()
+    {
+        turn = 0;
+        board.clear();
+        player1Turn = true;
+        for (Player player : players)
+        {
+            player.init();
+        }
+    }
 
   public Player.Move lastMove() {
     return moves.peek();
@@ -59,13 +80,15 @@ public class Game extends Observable {
     return moves.size() == 0;
   }
 
-  public Player currentPlayer() {
-    return players[player1Turn ? 0 : 1];
-  }
+    public Player currentPlayer()
+    {
+        return players[player1Turn ? 0 : 1];
+    }
 
-  public Player opponentPlayer() {
-    return players[player1Turn ? 1 : 0];
-  }
+    public Player opponentPlayer()
+    {
+        return players[player1Turn ? 1 : 0];
+    }
 
   /**
    * Lists all the legal moves that can be :
@@ -138,13 +161,42 @@ public class Game extends Observable {
     notifyObservers(getBoardJSString());
   }
 
+  //TODO REMOVE ?
+  public void playMove(final Move move)
+  {
+    if (move.type == Move.MoveType.ADD)
+    {
+      move.cases[0] = board.cases[move.cases[0].line][move.cases[0].column];
+    } else
+    {
+      move.cases[0] = board.cases[move.cases[0].line][move.cases[0].column];
+      move.cases[1] = board.cases[move.cases[1].line][move.cases[1].column];
+      if (move.type.equals(Move.MoveType.JUMP))
+      {
+        move.cases[2] = board.cases[move.cases[2].line][move.cases[2].column];
+        if (move.cases[3] != null)
+        {
+          move.cases[3] = board.cases[move.cases[3].line][move.cases[3].column];
+        }
+      }
+    }
+
+
+    currentMove = move;
+    board.playMove(currentPlayer(), opponentPlayer(), move);
+    player1Turn = !player1Turn;
+    setChanged();
+    toJson();
+    notifyObservers(toJson());
+  }
+
   public void play(Player.Move move) {
     this.turn++;
     moves.push(move);
     board.playMove(currentPlayer(), opponentPlayer(), moves.peek());
     player1Turn = !player1Turn;
     setChanged();
-    notifyObservers(getBoardJSString());
+    notifyObservers(toJson());
   }
 
   public void undo() {
@@ -153,7 +205,7 @@ public class Game extends Observable {
     player1Turn = !player1Turn;
     board.unplayMove(currentPlayer(), opponentPlayer(), lastMove);
     setChanged();
-    notifyObservers(getBoardJSString());
+    notifyObservers(toJson());
   }
 
   public int getTurn() {
@@ -178,7 +230,28 @@ public class Game extends Observable {
     return builder.toString();
   }
 
-  public String getBoardJSString() {
-    return board.toString().replaceAll("\n", "<br>");
-  }
+    public String getBoardJSString()
+    {
+        return board.toString().replaceAll("\n", "#");
+    }
+
+    public JSONObject toJson()
+    {
+        final JSONObject gameObject = new JSONObject();
+        try
+        {
+            gameObject.put(CURRENT_PLAYER, currentPlayer().getColor().namedColor);
+            JSONArray playersArray = new JSONArray();
+            for (Player player : players)
+            {
+                playersArray.put(player.toJson(board));
+            }
+            gameObject.put(PLAYERS, playersArray);
+            gameObject.put(BOARD, board.toJson());
+        } catch (JSONException e)
+        {
+            e.printStackTrace();
+        }
+        return gameObject;
+    }
 }

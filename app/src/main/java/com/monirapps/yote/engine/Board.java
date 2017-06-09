@@ -1,8 +1,11 @@
 package com.monirapps.yote.engine;
 
 import android.support.v4.util.Pair;
+import android.support.v7.widget.LinearLayoutCompat.OrientationMode;
 
+import com.google.gson.annotations.SerializedName;
 import com.monirapps.yote.engine.player.Player;
+import org.json.JSONArray;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -11,7 +14,7 @@ import java.util.Iterator;
 /**
  * Created by David et Monireh on 15/11/2016.
  */
-public class Board implements Iterable<Board.Case> {
+public final class Board implements Iterable<Board.Case>{
 
   @Override
   public String toString() {
@@ -184,21 +187,35 @@ public class Board implements Iterable<Board.Case> {
 
   public static class Blot {
 
-    public enum BlotColor {
-      WHITE,
-      BLACK;
+        public enum BlotColor{
+            @SerializedName("white")
+            WHITE("white", 1),
+            @SerializedName("black")
+            BLACK("black", -1);
 
-      public BlotColor opposite() {
-        switch (this) {
-          case WHITE:
-            return BLACK;
-          case BLACK:
-            return WHITE;
-          default: // SHOULD NOT HAPPEN
-            throw new IllegalStateException();
+            public final String namedColor;
+
+            public final int value;
+
+            BlotColor(String namedColor, int value)
+            {
+                this.namedColor = namedColor;
+                this.value = value;
+            }
+
+            public BlotColor opposite(){
+                switch (this){
+                    case WHITE:
+                        return BLACK;
+                    case BLACK:
+                        return WHITE;
+                    default: // SHOULD NOT HAPPEN
+                        throw new IllegalStateException();
+                }
+            }
+
+
         }
-      }
-    }
 
     public Blot(BlotColor color) {
       this.color = color;
@@ -270,11 +287,25 @@ public class Board implements Iterable<Board.Case> {
 
   public final Case[][] cases = new Case[HEIGHT][WIDTH];
 
-  public Board() {
-    for (int line = 0; line < HEIGHT; line++) {
-      for (int column = 0; column < WIDTH; column++) {
-        cases[line][column] = new Case(line, column);
-      }
+    public Board() {
+        for (int line = 0; line < HEIGHT; line++) {
+            for (int column = 0; column < WIDTH; column++) {
+                cases[line][column] = new Case(line, column);
+            }
+        }
     }
-  }
+
+    public JSONArray toJson() {
+        final JSONArray boardJson = new JSONArray();
+        for (Case[] caseRow : cases)
+        {
+            final JSONArray rowJson = new JSONArray();
+            for (Case aCase : caseRow)
+            {
+                rowJson.put(aCase.blot == null ? 0 : aCase.blot.color.value);
+            }
+            boardJson.put(rowJson);
+        }
+        return boardJson;
+    }
 }
